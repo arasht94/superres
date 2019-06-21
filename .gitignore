@@ -1,0 +1,5 @@
+.idea
+wandb
+data
+__pycache__/
+tensorboard/

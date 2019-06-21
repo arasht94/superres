@@ -4,20 +4,21 @@ import subprocess
 import os
 from PIL import Image
 import numpy as np
-from tensorflow.keras.models import Sequential
-from tensorflow.keras import layers
-from tensorflow.keras import backend as K
-from tensorflow.keras.callbacks import Callback
+from tensorflow.python.keras import backend as K
+from tensorflow.python.keras.callbacks import Callback, TensorBoard
 import wandb
 from wandb.keras import WandbCallback
+from model import SuperResModel
+from datetime import datetime
 
 run = wandb.init(project='superres')
 config = run.config
 
-config.num_epochs = 50
+config.num_epochs = 1 #50
 config.batch_size = 32
 config.input_height = 32
 config.input_width = 32
+config.input_depth = 3
 config.output_height = 256
 config.output_width = 256
 
@@ -85,23 +86,20 @@ class ImageLogger(Callback):
         }, commit=False)
 
 
-model = Sequential()
-model.add(layers.Conv2D(3, (3, 3), activation='relu', padding='same',
-                        input_shape=(config.input_width, config.input_height, 3)))
-model.add(layers.UpSampling2D())
-model.add(layers.Conv2D(3, (3, 3), activation='relu', padding='same'))
-model.add(layers.UpSampling2D())
-model.add(layers.Conv2D(3, (3, 3), activation='relu', padding='same'))
-model.add(layers.UpSampling2D())
-model.add(layers.Conv2D(3, (3, 3), activation='relu', padding='same'))
+model = SuperResModel((config.input_height, config.input_width, config.input_depth))
+
+# Tensorboard
+timestamp = datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
+tensorboard_dir = os.path.join('./tensorboard', timestamp)
+os.makedirs(tensorboard_dir)
+tensorboard = TensorBoard(log_dir=tensorboard_dir)
 
 # DONT ALTER metrics=[perceptual_distance]
 model.compile(optimizer='adam', loss='mse',
               metrics=[perceptual_distance])
-
 model.fit_generator(image_generator(config.batch_size, train_dir),
-                    steps_per_epoch=config.steps_per_epoch,
+                    steps_per_epoch=10, #config.steps_per_epoch,
                     epochs=config.num_epochs, callbacks=[
-                        ImageLogger(), WandbCallback()],
+                        ImageLogger(), WandbCallback(), tensorboard],
                     validation_steps=config.val_steps_per_epoch,
                     validation_data=val_generator)
