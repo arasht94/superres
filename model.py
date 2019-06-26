@@ -3,7 +3,8 @@ import tensorflow as tf
 from tensorflow.python.keras import Model, Input
 from tensorflow.python.keras.layers import Conv2D, UpSampling2D
 
-class SuperResModel(object):
+
+class DefaulModel(object):
 
     def __new__(cls, input_shape):
         inputs = Input(shape=input_shape)

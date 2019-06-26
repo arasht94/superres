@@ -1,6 +1,7 @@
 import random
 import glob
 import subprocess
+import sys
 import os
 from PIL import Image
 import numpy as np
@@ -8,8 +9,8 @@ from tensorflow.python.keras import backend as K
 from tensorflow.python.keras.callbacks import Callback, TensorBoard
 import wandb
 from wandb.keras import WandbCallback
-from model import SuperResModel
-from datetime import datetime
+from model import DefaulModel
+
 
 run = wandb.init(project='superres')
 config = run.config
@@ -86,20 +87,26 @@ class ImageLogger(Callback):
         }, commit=False)
 
 
-model = SuperResModel((config.input_height, config.input_width, config.input_depth))
+###########################################################################
+args = sys.argv
 
-# Tensorboard
-timestamp = datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
-tensorboard_dir = os.path.join('./tensorboard', timestamp)
-os.makedirs(tensorboard_dir)
-tensorboard = TensorBoard(log_dir=tensorboard_dir)
+if len(args) != 2:
+    print("Error: need to specify model.")
+    print("Usage: python train.py <MODEL>")
 
+model_type = args[1]
+if model_type == 'default':
+    model_class = DefaulModel
+
+model = model_class((config.input_height, config.input_width, config.input_depth))
+
+###########################################################################
 # DONT ALTER metrics=[perceptual_distance]
 model.compile(optimizer='adam', loss='mse',
               metrics=[perceptual_distance])
 model.fit_generator(image_generator(config.batch_size, train_dir),
                     steps_per_epoch=10, #config.steps_per_epoch,
                     epochs=config.num_epochs, callbacks=[
-                        ImageLogger(), WandbCallback(), tensorboard],
+                        ImageLogger(), WandbCallback()],
                     validation_steps=config.val_steps_per_epoch,
                     validation_data=val_generator)
