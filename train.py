@@ -9,7 +9,7 @@ from tensorflow.python.keras import backend as K
 from tensorflow.python.keras.callbacks import Callback, TensorBoard
 import wandb
 from wandb.keras import WandbCallback
-from model import DefaulModel
+from model import DefaulModel, DCSCNModel
 
 
 run = wandb.init(project='superres')
@@ -97,15 +97,20 @@ if len(args) != 2:
 model_type = args[1]
 if model_type == 'default':
     model_class = DefaulModel
+elif model_type == 'dcscn':
+    model_class = DCSCNModel
+else:
+    raise ValueError("Error: unrecognized model: {}".format(model_type))
 
-model = model_class((config.input_height, config.input_width, config.input_depth))
+input_shape = (config.input_height, config.input_width, config.input_depth)
+model = model_class(input_shape=input_shape)
 
 ###########################################################################
 # DONT ALTER metrics=[perceptual_distance]
 model.compile(optimizer='adam', loss='mse',
               metrics=[perceptual_distance])
 model.fit_generator(image_generator(config.batch_size, train_dir),
-                    steps_per_epoch=10, #config.steps_per_epoch,
+                    steps_per_epoch=1, #config.steps_per_epoch,
                     epochs=config.num_epochs, callbacks=[
                         ImageLogger(), WandbCallback()],
                     validation_steps=config.val_steps_per_epoch,
