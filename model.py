@@ -2,7 +2,7 @@ import tensorflow as tf
 
 from abc import abstractmethod
 from tensorflow.python.keras import Model, Input
-from tensorflow.python.keras.layers import Conv2D, UpSampling2D, Concatenate, Add
+from tensorflow.python.keras.layers import Conv2D, UpSampling2D, Concatenate, Add, Lambda
 from tensorflow.python.keras.layers.advanced_activations import PReLU
 
 
@@ -57,18 +57,22 @@ class DCSCNModel(BaseModel):
         filter_set_6 = self.conv_prelu(filter_set_5, 39, (3, 3))
         filter_set_7 = self.conv_prelu(filter_set_6, 32, (3, 3))
 
-        concat = Concatenate()([filter_set_1, filter_set_2, filter_set_3, filter_set_4,
-                                filter_set_5, filter_set_6, filter_set_7])
+        concat = Concatenate(axis=3)([filter_set_1, filter_set_2, filter_set_3, filter_set_4,
+                                      filter_set_5, filter_set_6, filter_set_7])
 
         a1 = self.conv_prelu(concat, 64, (1, 1))
         b1 = self.conv_prelu(concat, 32, (1, 1))
         b2 = self.conv_prelu(b1, 32, (1, 1))
 
-        concat_2 = Concatenate()([a1, b2])
+        concat_2 = Concatenate(axis=3)([a1, b2])
 
-        l = Conv2D(3, (1, 1), padding='same')(concat_2)
+        input_depth = int(concat_2.shape[-1])
+        scale = 8
+        conv = self.conv_prelu(concat_2, scale * scale * input_depth, (3, 3))
+        l = Lambda(lambda x: tf.depth_to_space(x, scale))(conv)
+        l = Conv2D(3, (1, 1), padding='same')(l)
 
-        upsampling = UpSampling2D(interpolation='bilinear')(inputs)
+        upsampling = UpSampling2D(size=(8, 8), interpolation='bilinear')(inputs)
 
         add = Add()([upsampling, l])
 

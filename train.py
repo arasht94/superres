@@ -10,6 +10,7 @@ from tensorflow.python.keras.callbacks import Callback, TensorBoard
 import wandb
 from wandb.keras import WandbCallback
 from model import DefaulModel, DCSCNModel
+from datetime import datetime
 
 
 run = wandb.init(project='superres')
@@ -105,6 +106,12 @@ else:
 input_shape = (config.input_height, config.input_width, config.input_depth)
 model = model_class(input_shape=input_shape)
 
+
+# Tensorboard
+timestamp = datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
+tensorboard_dir = os.path.join('./tensorboard', timestamp)
+os.makedirs(tensorboard_dir)
+tensorboard = TensorBoard(log_dir=tensorboard_dir)
 ###########################################################################
 # DONT ALTER metrics=[perceptual_distance]
 model.compile(optimizer='adam', loss='mse',
@@ -112,6 +119,6 @@ model.compile(optimizer='adam', loss='mse',
 model.fit_generator(image_generator(config.batch_size, train_dir),
                     steps_per_epoch=1, #config.steps_per_epoch,
                     epochs=config.num_epochs, callbacks=[
-                        ImageLogger(), WandbCallback()],
+                        ImageLogger(), WandbCallback(), tensorboard],
                     validation_steps=config.val_steps_per_epoch,
                     validation_data=val_generator)
