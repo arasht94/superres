@@ -134,16 +134,18 @@ class WDSRModelB(BaseModel):
         num_filters = 32
         num_residual_blocks = 32
         res_block_expansion = 6
-    
+
         # main branch (revise padding)
-        m = conv2d_weight_norm(inputs, num_filters, 1, padding='valid')
+        m = conv2d_weight_norm(inputs, num_filters, 3, padding='valid')
         for i in range(num_residual_blocks):
             m = self.res_block_b(m, num_filters, res_block_expansion, kernel_size=3, scaling=None)
-        m = conv2d_weight_norm(m, 3 * scale ** 2, 1, padding='valid')
+        m = Lambda(lambda x: tf.pad(x, tf.constant([[0, 0], [1, 1], [1, 1], [0, 0]])))(m)
+        m = conv2d_weight_norm(m, 3 * scale ** 2, 3, padding='same')
         m = self.SubpixelConv2D(scale)(m)
 
         # skip branch
-        s = conv2d_weight_norm(inputs, 3 * scale ** 2, 1, padding='valid')
+#         s = Lambda(lambda x: tf.pad(x, tf.constant([[0, 0], [1, 1], [1, 1], [0, 0]])))(inputs)
+        s = conv2d_weight_norm(inputs, 3 * scale ** 2, 5, padding='same')
         s = self.SubpixelConv2D(scale)(s)
 
         x = Add()([m, s])
