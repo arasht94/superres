@@ -9,7 +9,7 @@ from tensorflow.python.keras import backend as K
 from tensorflow.python.keras.callbacks import Callback, TensorBoard
 import wandb
 from wandb.keras import WandbCallback
-from model import DefaulModel, DCSCNModel, WDSRModel
+from model import DefaulModel, DCSCNModel, WDSRModelA, WDSRModelB
 from datetime import datetime
 
 
@@ -100,8 +100,10 @@ if model_type == 'default':
     model_class = DefaulModel
 elif model_type == 'dcscn':
     model_class = DCSCNModel
-elif model_type == 'wdsr':
-    model_class = WDSRModel
+elif model_type == 'wdsra':
+    model_class = WDSRModelA
+elif model_type == 'wdsrb':
+    model_class = WDSRModelB
 else:
     raise ValueError("Error: unrecognized model: {}".format(model_type))
 
