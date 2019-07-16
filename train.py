@@ -9,14 +9,14 @@ from tensorflow.python.keras import backend as K
 from tensorflow.python.keras.callbacks import Callback, TensorBoard
 import wandb
 from wandb.keras import WandbCallback
-from model import DefaulModel, DCSCNModel
+from model import DefaulModel, DCSCNModel, WDSRModel
 from datetime import datetime
 
 
 run = wandb.init(project='superres')
 config = run.config
 
-config.num_epochs = 1 #50
+config.num_epochs = 50
 config.batch_size = 32
 config.input_height = 32
 config.input_width = 32
@@ -100,6 +100,8 @@ if model_type == 'default':
     model_class = DefaulModel
 elif model_type == 'dcscn':
     model_class = DCSCNModel
+elif model_type == 'wdsr':
+    model_class = WDSRModel
 else:
     raise ValueError("Error: unrecognized model: {}".format(model_type))
 
@@ -117,7 +119,7 @@ tensorboard = TensorBoard(log_dir=tensorboard_dir)
 model.compile(optimizer='adam', loss='mse',
               metrics=[perceptual_distance])
 model.fit_generator(image_generator(config.batch_size, train_dir),
-                    steps_per_epoch=1, #config.steps_per_epoch,
+                    steps_per_epoch=config.steps_per_epoch,
                     epochs=config.num_epochs, callbacks=[
                         ImageLogger(), WandbCallback(), tensorboard],
                     validation_steps=config.val_steps_per_epoch,
