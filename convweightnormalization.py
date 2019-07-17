@@ -14,7 +14,7 @@ class Conv2DWeightNorm(tf.layers.Conv2D):
         super(Conv2DWeightNorm, self).build(input_shape)
         square_sum = tf.reduce_sum(
             tf.square(self.kernel), [0, 1, 2], keepdims=False)
-        inv_norm = tf.rsqrt(square_sum)
+        inv_norm = 1 / tf.sqrt(tf.maximum(square_sum, tf.constant(1e-7, dtype=tf.float32)))
         self.kernel = self.kernel * (inv_norm * self.wn_g)
 
 
