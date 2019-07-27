@@ -3,10 +3,13 @@ import glob
 import subprocess
 import sys
 import os
+
+from tensorflow.train import AdamOptimizer
 from PIL import Image
 import numpy as np
 from tensorflow.python.keras import backend as K
 from tensorflow.python.keras.callbacks import Callback, TensorBoard
+from tensorflow.python.keras.optimizers import Adam
 import wandb
 from wandb.keras import WandbCallback
 from model import DefaulModel, DCSCNModel, WDSRModelA, WDSRModelB
@@ -16,7 +19,7 @@ from datetime import datetime
 run = wandb.init(project='superres')
 config = run.config
 
-config.num_epochs = 50
+config.num_epochs = 100
 config.batch_size = 32
 config.input_height = 32
 config.input_width = 32
@@ -112,17 +115,18 @@ model = model_class(input_shape=input_shape)
 
 
 # Tensorboard
-timestamp = datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
-tensorboard_dir = os.path.join('./tensorboard', timestamp)
-os.makedirs(tensorboard_dir)
-tensorboard = TensorBoard(log_dir=tensorboard_dir)
+# timestamp = datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
+# tensorboard_dir = os.path.join('./tensorboard', timestamp)
+# os.makedirs(tensorboard_dir)
+# tensorboard = TensorBoard(log_dir=tensorboard_dir)
+optimizer = Adam(1e-3)
 ###########################################################################
 # DONT ALTER metrics=[perceptual_distance]
-model.compile(optimizer='adam', loss='mse',
+model.compile(optimizer=optimizer, loss='mae',
               metrics=[perceptual_distance])
 model.fit_generator(image_generator(config.batch_size, train_dir),
                     steps_per_epoch=config.steps_per_epoch,
                     epochs=config.num_epochs, callbacks=[
-                        ImageLogger(), WandbCallback(), tensorboard],
+                        ImageLogger(), WandbCallback()],
                     validation_steps=config.val_steps_per_epoch,
                     validation_data=val_generator)

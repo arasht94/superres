@@ -139,7 +139,7 @@ class WDSRModelB(BaseModel):
         m = conv2d_weight_norm(inputs, num_filters, 3, padding='valid')
         for i in range(num_residual_blocks):
             m = self.res_block_b(m, num_filters, res_block_expansion, kernel_size=3, scaling=None)
-        m = Lambda(lambda x: tf.pad(x, tf.constant([[0, 0], [1, 1], [1, 1], [0, 0]])))(m)
+        m = Lambda(lambda x: tf.pad(x, tf.constant([[0, 0], [1, 1], [1, 1], [0, 0]]), 'SYMMETRIC'))(m)
         m = conv2d_weight_norm(m, 3 * scale ** 2, 3, padding='same')
         m = self.SubpixelConv2D(scale)(m)
 
